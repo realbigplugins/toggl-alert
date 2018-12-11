@@ -1,0 +1,195 @@
+.toggl-alert-rbm-repeater {
+
+	table.widefat {
+
+		background: transparent;
+		border: 0;
+		box-shadow: none;
+
+		thead {
+
+			tr {
+
+				display: block;
+
+				th {
+
+					display: inline-block;
+
+					div {
+
+						display: inline-block;
+						vertical-align: middle;
+
+					}
+
+				}
+
+				.toggl-alert-rbm-repeater-controls {
+					text-align: right;
+				}
+
+			}
+
+		}
+
+	}
+
+	.toggl-alert-rbm-repeater-list {
+		border: 2px solid #e5e5e5;
+		box-shadow: 0 1px 1px rgba(0,0,0,0.06);
+	}
+
+	.toggl-alert-rbm-repeater-item {
+
+		background: #f5f5f5;
+
+		.repeater-header {
+
+			border: 1px #ddd;
+			border-top-style: solid;
+			border-bottom-style: solid;
+			padding: 20px 0px 20px 10px;
+
+			th {
+				vertical-align: middle;
+				width: 100%;
+				padding: 0;
+				border: none;
+			}
+
+			.status-indicator {
+
+				line-height: 1.2;
+
+				&.active {
+					color: #4F8A10;
+				}
+
+				&.inactive {
+					color: #D8000C;
+				}
+
+			}
+
+			.toggl-alert-rbm-repeater-controls {
+
+				text-align: right;
+				margin-right: 10px;
+
+				@include breakpoint( medium ) {
+					float: right; // No floating on small screens, we use text-align instead
+					text-align: center;
+				}
+
+			}
+
+		}
+
+		&:first-of-type {
+			.repeater-header {
+				border-top-style: none;
+			}
+		}
+
+		&:last-of-type {
+			.repeater-header {
+				border-bottom-style: none;
+			}
+		}
+
+	}
+
+}
+
+.toggl-alert-rbm-repeater-content {
+
+	margin-bottom: 32px; // Same Margin as the margin from the top
+	overflow-x: hidden;
+
+	max-width: 91%; // On Small screens this overflows to the right somewhat
+
+	@include breakpoint( medium ) {
+		max-width: none;
+	}
+
+	.toggl-alert-rbm-repeater-form {
+		margin-top: 1rem;
+	}
+
+	table.widefat {
+		background: transparent;
+		border: 0;
+		box-shadow: none;
+	}
+
+	input.regular-text, textarea, select, div.wp-picker-container {
+		width: 100%;
+	}
+
+	td {
+
+		vertical-align: top;
+
+		&.hidden {
+			display: none !important;
+		}
+
+	}
+
+	.validation-error {
+		color: #D8000C;
+	}
+
+	.toggl-alert-auto-expand-textarea {
+		resize: none;
+	}
+
+}
+
+// Errors about outdated Integrations
+.form-table td {
+
+	.integration-error {
+
+		background: #fff;
+		border-left: 4px solid #dc3232;
+		-webkit-box-shadow: 0 1px 1px 0 rgba( 0, 0, 0, 0.1 );
+		box-shadow: 0 1px 1px 0 rgba( 0, 0, 0, 0.1 );
+		margin: 5px 0;
+		padding: 1px 12px;
+
+		p {
+			margin: 0.5em 0;
+			padding: 2px;
+		}
+
+	}
+
+}
+
+.saving {
+	
+	line-height: 1.5;
+	
+	&.with-top-margin {
+		line-height: 1;
+		margin-top: 1.25em;
+	}
+	
+	display: inline-block;
+	
+	span {
+
+		animation: fadeinout 1.75s infinite;
+		opacity: 0;
+		font-size: 1.5em;
+		color: #666;
+		
+	}
+
+}
+
+@keyframes fadeinout {
+	50% { opacity: 1; }
+}

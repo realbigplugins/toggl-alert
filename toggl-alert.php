@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Toggl Alert
- * Plugin URI: https://github.com/realbigplugins/toggle-alert
+ * Plugin URI: https://github.com/realbigplugins/toggl-alert
  * Description: Configurable Email Alerts to send out if a certain number of hours in a Project within a time period have not been met
  * Version: 0.1.0
  * Text Domain: toggl-alert
@@ -162,6 +162,55 @@ if ( ! class_exists( 'Toggl_Alert' ) ) {
 		 */
 		private function require_necessities() {
 			
+			require_once __DIR__ . '/core/library/rbm-field-helpers/rbm-field-helpers.php';
+		
+			$this->field_helpers = new RBM_FieldHelpers( array(
+				'ID'   => 'toggl_alert', // Your Theme/Plugin uses this to differentiate its instance of RBM FH from others when saving/grabbing data
+				'l10n' => array(
+					'field_table'    => array(
+						'delete_row'    => __( 'Delete Row', 'toggl-alert' ),
+						'delete_column' => __( 'Delete Column', 'toggl-alert' ),
+					),
+					'field_select'   => array(
+						'no_options'       => __( 'No select options.', 'toggl-alert' ),
+						'error_loading'    => __( 'The results could not be loaded', 'toggl-alert' ),
+						/* translators: %d is number of characters over input limit */
+						'input_too_long'   => __( 'Please delete %d character(s)', 'toggl-alert' ),
+						/* translators: %d is number of characters under input limit */
+						'input_too_short'  => __( 'Please enter %d or more characters', 'toggl-alert' ),
+						'loading_more'     => __( 'Loading more results...', 'toggl-alert' ),
+						/* translators: %d is maximum number items selectable */
+						'maximum_selected' => __( 'You can only select %d item(s)', 'toggl-alert' ),
+						'no_results'       => __( 'No results found', 'toggl-alert' ),
+						'searching'        => __( 'Searching...', 'toggl-alert' ),
+					),
+					'field_repeater' => array(
+						'collapsable_title' => __( 'New Row', 'toggl-alert' ),
+						'confirm_delete'    => __( 'Are you sure you want to delete this element?', 'toggl-alert' ),
+						'delete_item'       => __( 'Delete', 'toggl-alert' ),
+						'add_item'          => __( 'Add', 'toggl-alert' ),
+					),
+					'field_media'    => array(
+						'button_text'        => __( 'Upload / Choose Media', 'toggl-alert' ),
+						'button_remove_text' => __( 'Remove Media', 'toggl-alert' ),
+						'window_title'       => __( 'Choose Media', 'toggl-alert' ),
+					),
+					'field_checkbox' => array(
+						'no_options_text' => __( 'No options available.', 'toggl-alert' ),
+					),
+				),
+			) );
+			
+			require_once __DIR__ . '/core/library/composer/autoload.php';
+			
+			require_once __DIR__ . '/core/admin/class-toggl-alert-admin.php';
+			
+			$this->admin = new Toggl_Alert_Admin();
+			
+			require_once __DIR__ . '/core/emails/class-toggl-alert-notification-integration.php';
+			
+			$this->integration = new Toggl_Alert_Notification_Integration();
+			
 		}
 		
 		/**
@@ -233,6 +282,203 @@ if ( ! class_exists( 'Toggl_Alert' ) ) {
 				'togglAlert',
 				apply_filters( 'toggl_alert_localize_admin_script', array() )
 			);
+			
+		}
+		
+		/**
+		 * Grab LearnDash Slack Fields
+		 * 
+		 * $param		$api_token Whether to run all the Queries for Choices or not
+		 * 
+		 * @access		public
+		 * @since		1.0.0
+		 * @return		array  LearnDash_Slack Settings API Fields
+		 */
+		public function get_settings_fields( $api_token = false ) {
+			
+			$workspaces_array = array();
+			$clients_array = array();
+			$projects_array = array();
+
+			// Only run through all these queries when we need them
+			if ( $api_token ) {
+				
+				$toggl_client = \AJT\Toggl\TogglClient::factory( array(
+					'api_key' => $api_token,
+					'apiVersion' => 'v8',
+					'debug' => false,
+				) );
+				
+				$toggl_reports = \AJT\Toggl\ReportsClient::factory( array(
+					'api_key' => $api_token,
+					'apiVersion' => 'v2',
+					'debug' => false,
+				) );
+				
+				if ( ! $workspaces_array = get_transient( 'toggl_alert_workspaces' ) ) {
+					
+					$workspaces_response = $toggl_client->getWorkspaces( array() );
+				
+					foreach ( $workspaces_response as $workspace ) {
+
+						$workspaces_array[ $workspace['id'] ] = $workspace['name'];
+
+					}
+					
+					set_transient( 'toggl_alert_workspaces', $workspaces_array, DAY_IN_SECONDS );
+					
+				}
+				
+				if ( ! $clients_array = get_transient( 'toggl_alert_clients' ) ) {
+					
+					$clients_response = $toggl_client->getClients( array() );
+				
+					foreach ( $clients_response as $client ) {
+
+						$clients_array[ $client['id'] ] = $client['name'];
+
+					}
+					
+					set_transient( 'toggl_alert_clients', $clients_array, DAY_IN_SECONDS );
+					
+				}
+				
+				if ( ! $projects_array = get_transient( 'toggl_alert_projects' ) ) {
+					
+					foreach ( $workspaces_array as $workspace_id => $workspace_name ) {
+						
+						$projects_in_workspace = $toggl_client->getProjects( array(
+							'id' => $workspace_id,
+							'active' => 'true',
+						) );
+						
+						foreach ( $projects_in_workspace as $project ) {
+							
+							$workspace_name = $workspaces_array[ $project['wid'] ];
+							$client_name = $clients_array[ $project['cid'] ];
+							
+							if ( ! isset( $projects_array[ $workspace_name ] ) ) {
+								$projects_array[ $workspace_name ] = array();
+							}
+							
+							if ( empty( $client_name ) ) {
+								$client_name = __( 'No Client', 'toggl-alert' );
+							}
+							
+							$projects_array[ $workspace_name ][ $project['id'] ] = $client_name . ': ' . $project['name'];
+							
+						}
+						
+						foreach ( $projects_array as $workspace_name => $projects ) {
+							
+							sort( $projects_array[ $workspace_name ] );
+							
+						}
+						
+						set_transient( 'toggl_alert_projects', $projects_array, DAY_IN_SECONDS );
+						
+					}
+					
+				}
+
+			}
+			
+			$fields = array( 
+				'email_post_id' => array(
+					'type'  => 'hook',
+				),
+				'admin_title' => array(
+					'label' => _x( 'Identifier for this Notification', 'Admin Title Field Label', 'toggl-alert' ),
+					'type'  => 'text',
+					'input_class' => 'regular-text email-post-title',
+					'input_atts' => array(
+						'placeholder' => __( 'New Email Notification', 'toggl-alert' ),
+					),
+					'description'  => __( 'Helps distinguish Notifications from one another on the Settings Screen. If left blank, your Notification will be labeled &ldquo;New Email Notification&rdquo;.', 'toggl-alert' ),
+				),
+				'project' => array(
+					'type' => 'select',
+					'label' => __( 'Project', 'toggl-alert' ),
+					'opt_groups' => true,
+					'opt_group_selection_prefix' => false,
+					'placeholder' => __( '-- Select Project --', 'toggl-alert' ),
+					'input_class' => 'required toggl-alert-project select2',
+					'options' => $projects_array,
+					'default' => '',
+				),
+				'period' => array(
+					'type' => 'select',
+					'label' => __( 'Time Period', 'toggl-alert' ),
+					'placeholder' => __( '-- Select Time Period --', 'toggl-alert' ),
+					'input_class' => 'required toggl-alert-period select2',
+					'options' => array(
+						'week' => __( 'The past week', 'toggl-alert' ),
+						'month' => __( 'The past month', 'toggl-alert' ),
+						'year' => __( 'The past year', 'toggl-alert' ),
+					),
+					'default' => '',
+				),
+				'hours' => array(
+					'type' => 'number',
+					'label' => __( 'Alert when the Project is under X Hours for the selected Time Period', 'toggl-alert' ),
+					'input_class' => 'required toggl-alert-hours',
+					'default' => '',
+				),
+				'subject' => array(
+					'label' => __( 'Subject Line (Optional)', 'toggl-alert' ),
+					'type'  => 'text',
+					'input_class' => 'regular-text email-subject',
+					'description'  => __( 'If not set, this will default to your &ldquo;Identifier for this Notification&rdquo; value.', 'toggl-alert' ),
+				),
+				'message' => array(
+					'label' => __( 'Message (Optional)', 'toggl-alert' ),
+					'type'  => 'textarea',
+					'input_class' => 'regular-text email-message',
+				),
+				'to' => array(
+					'label' => __( 'To: (Optional)', 'toggl-alert' ),
+					'type'  => 'text',
+					'input_class' => 'regular-text email-to',
+					'input_atts' => array(
+						'placeholder' => get_option( 'admin_email' ),
+					),
+					'description'  => sprintf( __( 'Separate multiple emails by commas. If not set, this will default to <code>%s</code>', 'toggl-alert' ), get_option( 'admin_email' ) ),
+				),
+				'cc' => array(
+					'label' => __( 'CC: (Optional)', 'toggl-alert' ),
+					'type'  => 'text',
+					'input_class' => 'regular-text email-cc',
+					'description'  => __( 'Separate multiple emails by commas.', 'toggl-alert' ),
+				),
+				'bcc' => array(
+					'label' => __( 'BCC: (Optional)', 'toggl-alert' ),
+					'type'  => 'text',
+					'input_class' => 'regular-text email-bcc',
+					'description'  => __( 'Separate multiple emails by commas.', 'toggl-alert' ),
+				),
+			);
+
+			return apply_filters( 'toggl_alert_settings_fields', $fields );
+
+		}
+		
+		/**
+		 * Utility Function to insert one Array into another at a specified Index. Useful for the Notification Repeater Field's Filter
+		 * @param		array   &$array       Array being modified. This passes by reference.
+		 * @param		integer $index        Insertion Index. Even if it is an associative array, give a numeric index. Determine it by doing a foreach() until you hit your desired placement and then break out of the loop.
+		 * @param		array   $insert_array Array being Inserted at the Index
+		 *                                                           
+		 * @access		public
+		 * @since		1.2.0
+		 * @return		void
+		 */
+		public function array_insert( &$array, $index, $insert_array ) { 
+			
+			// First half before the cut-off for the splice
+			$first_array = array_splice( $array, 0, $index ); 
+			
+			// Merge this with the inserted array and the last half of the splice
+			$array = array_merge( $first_array, $insert_array, $array );
 			
 		}
 		

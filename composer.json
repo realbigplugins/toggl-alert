@@ -1,0 +1,8 @@
+{
+	"config": {
+        "vendor-dir": "core/library/composer"
+    },
+    "require": {
+        "ajt/guzzle-toggl": "^1.0"
+    }
+}

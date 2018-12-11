@@ -1,7 +1,9 @@
 {
   "name": "Toggl_Alert",
   "version": "0.1.0",
-  "dependencies": {},
+  "dependencies": {
+    "foundation-sites": "^6.4.1"
+  },
   "devDependencies": {
     "babel-core": "^6.26.3",
     "babel-loader": "^6.4.1",
@@ -52,9 +54,9 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/realbigplugins/toggle-alert.git"
+    "url": "https://github.com/realbigplugins/toggl-alert.git"
   },
   "bugs": {
-    "url": "https://github.com/realbigplugins/toggle-alert/issues"
+    "url": "https://github.com/realbigplugins/toggl-alert/issues"
   }
 }
