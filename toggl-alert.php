@@ -204,12 +204,19 @@ if ( ! class_exists( 'Toggl_Alert' ) ) {
 			require_once __DIR__ . '/core/library/composer/autoload.php';
 			
 			require_once __DIR__ . '/core/admin/class-toggl-alert-admin.php';
-			
 			$this->admin = new Toggl_Alert_Admin();
 			
-			require_once __DIR__ . '/core/emails/class-toggl-alert-notification-integration.php';
+			require_once __DIR__ . '/core/emails/class-toggl-alert-api.php';
+			$this->email_api = new Toggl_Alert_API();
 			
+			require_once __DIR__ . '/core/notifications/class-toggl-alert-notification-handler.php';
+			$this->notification_handler = new Toggl_Alert_Notification_Handler();
+			
+			require_once __DIR__ . '/core/emails/class-toggl-alert-notification-integration.php';
 			$this->integration = new Toggl_Alert_Notification_Integration();
+			
+			require_once __DIR__ . '/core/emails/class-toggl-alert-notification-triggers.php';
+			$this->triggers = new Toggl_Alert_Notification_Triggers();
 			
 		}
 		
@@ -383,6 +390,18 @@ if ( ! class_exists( 'Toggl_Alert' ) ) {
 
 			}
 			
+			$triggers = array();
+
+			$weekdays = Toggl_Alert::get_weekdays();
+			
+			foreach ( $weekdays as $index => $day ) {
+				
+				$key = date( 'l', strtotime( "Sunday +{$index} days" ) );
+				
+				$triggers[ 'every_' . strtolower( $key ) ] = sprintf( __( 'Every %s', 'toggl-alert' ), $day );
+				
+			}
+			
 			$fields = array( 
 				'email_post_id' => array(
 					'type'  => 'hook',
@@ -406,16 +425,12 @@ if ( ! class_exists( 'Toggl_Alert' ) ) {
 					'options' => $projects_array,
 					'default' => '',
 				),
-				'period' => array(
+				'trigger' => array(
 					'type' => 'select',
-					'label' => __( 'Time Period', 'toggl-alert' ),
-					'placeholder' => __( '-- Select Time Period --', 'toggl-alert' ),
-					'input_class' => 'required toggl-alert-period select2',
-					'options' => array(
-						'week' => __( 'The past week', 'toggl-alert' ),
-						'month' => __( 'The past month', 'toggl-alert' ),
-						'year' => __( 'The past year', 'toggl-alert' ),
-					),
+					'label' => __( 'Trigger', 'toggl-alert' ),
+					'placeholder' => __( '-- Select Trigger --', 'toggl-alert' ),
+					'input_class' => 'required toggl-alert-trigger select2',
+					'options' => $triggers,
 					'default' => '',
 				),
 				'hours' => array(
@@ -425,15 +440,15 @@ if ( ! class_exists( 'Toggl_Alert' ) ) {
 					'default' => '',
 				),
 				'subject' => array(
-					'label' => __( 'Subject Line (Optional)', 'toggl-alert' ),
+					'label' => __( 'Subject Line', 'toggl-alert' ),
 					'type'  => 'text',
-					'input_class' => 'regular-text email-subject',
+					'input_class' => 'regular-text email-subject required',
 					'description'  => __( 'If not set, this will default to your &ldquo;Identifier for this Notification&rdquo; value.', 'toggl-alert' ),
 				),
 				'message' => array(
-					'label' => __( 'Message (Optional)', 'toggl-alert' ),
+					'label' => __( 'Message', 'toggl-alert' ),
 					'type'  => 'textarea',
-					'input_class' => 'regular-text email-message',
+					'input_class' => 'regular-text email-message required',
 				),
 				'to' => array(
 					'label' => __( 'To: (Optional)', 'toggl-alert' ),
@@ -482,6 +497,76 @@ if ( ! class_exists( 'Toggl_Alert' ) ) {
 			
 		}
 		
+		/**
+		 * Gets an array of Localized Weekdays
+		 * 
+		 * @access		public
+		 * @since		{{VERSION}}
+		 * @return		array Array of Localized Weekdays
+		 */
+		public static function get_weekdays() {
+			
+			global $wp_locale;
+
+			$weekdays = array();
+
+			foreach ( $wp_locale->weekday as $index => $weekday ) {
+				$weekdays[ $index ] = $weekday;
+			}
+			
+			return $weekdays;
+			
+		}
+		
+		/**
+		 * Runs on Plugin Activation to set up a WP Cron
+		 * 
+		 * @access		public
+		 * @since		1.0.0
+		 * @return		void
+		 */
+		public static function activate() {
+			
+			$weekdays = Toggl_Alert::get_weekdays();
+			
+			foreach ( $weekdays as $index => $day ) {
+				
+				if ( ! wp_next_scheduled( 'toggl_alert_weekly_' . $index . '_cron' ) ) {
+					
+					// Ensure there are no issues with locale and convert 
+					$day = date( 'D', strtotime( "Sunday +{$index} days" ) );
+					
+					// Calculate Timezone offset, which will be subtracted from our calculated Timestamp
+					// This means UTC-5 will be added to the Timestamp
+					// This is necessary because WP Events are fired based on the Timezone but Timestamps are not, so we have to counteract it
+					$time = new \DateTime( 'now', new DateTimeZone( get_option( 'timezone_string', 'America/Detroit' ) ) );
+					$timezone_offset = $time->format( 'Z' );
+					
+					wp_schedule_event( strtotime( 'next ' . $day ) - $timezone_offset, 'weekly', 'toggl_alert_weekly_' . $index . '_cron' );
+					
+				}
+					
+			}
+			
+		}
+		
+		/**
+		 * Runs on Plugin Deactivation to remove the WP Cron from Activation
+		 * 
+		 * @access		public
+		 * @since		1.0.0
+		 * @return		void
+		 */
+		public static function deactivate() {
+			
+			foreach ( $weekdays as $index => $day ) {
+			
+				wp_clear_scheduled_hook( 'toggl_alert_weekly_' . $index . '_cron' );
+				
+			}
+			
+		}
+		
 	}
 	
 } // End Class Exists Check
@@ -500,3 +585,6 @@ function toggl_alert_load() {
 	TOGGLALERT();
 
 }
+
+register_activation_hook( __FILE__, array( 'Toggl_Alert', 'activate' ) );
+register_deactivation_hook( __FILE__, array( 'Toggl_Alert', 'deactivate' ) );
