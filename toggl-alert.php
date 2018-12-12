@@ -303,92 +303,7 @@ if ( ! class_exists( 'Toggl_Alert' ) ) {
 		 */
 		public function get_settings_fields( $api_token = false ) {
 			
-			$workspaces_array = array();
-			$clients_array = array();
-			$projects_array = array();
-
-			// Only run through all these queries when we need them
-			if ( $api_token ) {
-				
-				$toggl_client = \AJT\Toggl\TogglClient::factory( array(
-					'api_key' => $api_token,
-					'apiVersion' => 'v8',
-					'debug' => false,
-				) );
-				
-				$toggl_reports = \AJT\Toggl\ReportsClient::factory( array(
-					'api_key' => $api_token,
-					'apiVersion' => 'v2',
-					'debug' => false,
-				) );
-				
-				if ( ! $workspaces_array = get_transient( 'toggl_alert_workspaces' ) ) {
-					
-					$workspaces_response = $toggl_client->getWorkspaces( array() );
-				
-					foreach ( $workspaces_response as $workspace ) {
-
-						$workspaces_array[ $workspace['id'] ] = $workspace['name'];
-
-					}
-					
-					set_transient( 'toggl_alert_workspaces', $workspaces_array, DAY_IN_SECONDS );
-					
-				}
-				
-				if ( ! $clients_array = get_transient( 'toggl_alert_clients' ) ) {
-					
-					$clients_response = $toggl_client->getClients( array() );
-				
-					foreach ( $clients_response as $client ) {
-
-						$clients_array[ $client['id'] ] = $client['name'];
-
-					}
-					
-					set_transient( 'toggl_alert_clients', $clients_array, DAY_IN_SECONDS );
-					
-				}
-				
-				if ( ! $projects_array = get_transient( 'toggl_alert_projects' ) ) {
-					
-					foreach ( $workspaces_array as $workspace_id => $workspace_name ) {
-						
-						$projects_in_workspace = $toggl_client->getProjects( array(
-							'id' => $workspace_id,
-							'active' => 'true',
-						) );
-						
-						foreach ( $projects_in_workspace as $project ) {
-							
-							$workspace_name = $workspaces_array[ $project['wid'] ];
-							$client_name = $clients_array[ $project['cid'] ];
-							
-							if ( ! isset( $projects_array[ $workspace_name ] ) ) {
-								$projects_array[ $workspace_name ] = array();
-							}
-							
-							if ( empty( $client_name ) ) {
-								$client_name = __( 'No Client', 'toggl-alert' );
-							}
-							
-							$projects_array[ $workspace_name ][ $project['id'] ] = $client_name . ': ' . $project['name'];
-							
-						}
-						
-						foreach ( $projects_array as $workspace_name => $projects ) {
-							
-							sort( $projects_array[ $workspace_name ] );
-							
-						}
-						
-						set_transient( 'toggl_alert_projects', $projects_array, DAY_IN_SECONDS );
-						
-					}
-					
-				}
-
-			}
+			$projects_array = toggl_alert_get_projects( $api_token );
 			
 			$triggers = array();
 
@@ -495,6 +410,37 @@ if ( ! class_exists( 'Toggl_Alert' ) ) {
 			// Merge this with the inserted array and the last half of the splice
 			$array = array_merge( $first_array, $insert_array, $array );
 			
+		}
+		
+		/**
+		 * Recursively search an Array for a Key
+		 * 
+		 * @param		array $array Array to be searched
+		 * @param		string Key to search for
+		 * 
+		 * @access		public
+		 * @since		{{VERSION}}
+		 * @return		string Value
+		 */
+		public function array_key_search( $array, $search ) {
+			
+			$result = false;
+			
+			if ( is_array( $array ) ) {
+				
+				foreach ( $array as $key => $value ) {
+					
+					$result = $key === $search ? $value : $this->array_key_search( $value, $search );
+					
+					if ( $result ) {
+						break;
+					}
+					
+				}
+			}
+			
+			return $result;
+		
 		}
 		
 		/**

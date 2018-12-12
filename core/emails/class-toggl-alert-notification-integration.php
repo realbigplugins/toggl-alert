@@ -128,6 +128,45 @@ final class Toggl_Alert_Notification_Integration {
 			
 		) );
 		
+		$api_token = get_option( 'toggl_api_token' );
+		
+		if ( $api_token ) {
+		
+			$workspace_project = explode( '-', $fields['project'] );
+
+			$workspace_id = $workspace_project[0];
+			$project_id = $workspace_project[1];
+
+			$toggl_reports = \AJT\Toggl\ReportsClient::factory( array(
+				'api_key' => $api_token,
+				'apiVersion' => 'v2',
+				'debug' => false,
+			) );
+
+			$week_report = $toggl_reports->weekly( array(
+				'user_agent' => 'rbm-toggl-alert',
+				'workspace_id' => (int) $workspace_id,
+				'project_ids' => $project_id,
+			) );
+
+			// This is recorded in milliseconds
+			$args['logged_hours'] = $week_report['total_grand'] / ( HOUR_IN_SECONDS * 1000 );
+			
+			// If more hours were logged then we were checking for, don't send a notification
+			if ( $args['logged_hours'] >= $fields['hours'] ) {
+				$args['bail'] = true;
+				return false;
+			}
+			
+		}
+		else {
+			
+			// No API Key, don't send notification
+			$args['bail'] = true;
+			return false;
+			
+		}
+		
 	}
 	
 	/**
@@ -147,7 +186,15 @@ final class Toggl_Alert_Notification_Integration {
 
 		if ( $notification_id == 'rbm' ) {
 			
-			$replacements['%project%'] = 'test';
+			$api_token = get_option( 'toggl_api_token' );
+			
+			$projects_array = toggl_alert_get_projects( $api_token );
+			$project = TOGGLALERT()->array_key_search( $projects_array, $fields['project'] );
+			
+			$replacements['%project%'] = ( $project ) ? $project : __( 'Project not found', 'toggl-alert' );
+			
+			$replacements['%minimum_hours%'] = $fields['hours'];
+			$replacements['%logged_hours%'] = number_format( $args['logged_hours'], 2 );
 
 			switch ( $trigger ) {
 					

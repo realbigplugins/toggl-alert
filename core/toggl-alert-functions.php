@@ -301,3 +301,94 @@ function toggl_alert_missing_callback( $args ) {
 	);
 		
 }
+
+/**
+ * Get all projects from Toggl for the Provided API Token
+ * 
+ * @param		string $api_token API Token
+ *                               
+ * @since		{{VERSION}}
+ * @return		array  Projects Array per-Workspace
+ */
+function toggl_alert_get_projects( $api_token = false ) {
+	
+	if ( ! $api_token ) return array();
+	
+	$workspaces_array = array();
+	$clients_array = array();
+
+	$toggl_client = \AJT\Toggl\TogglClient::factory( array(
+		'api_key' => $api_token,
+		'apiVersion' => 'v8',
+		'debug' => false,
+	) );
+
+	if ( ! $workspaces_array = get_transient( 'toggl_alert_workspaces' ) ) {
+
+		$workspaces_response = $toggl_client->getWorkspaces( array() );
+
+		foreach ( $workspaces_response as $workspace ) {
+
+			$workspaces_array[ $workspace['id'] ] = $workspace['name'];
+
+		}
+
+		set_transient( 'toggl_alert_workspaces', $workspaces_array, DAY_IN_SECONDS );
+
+	}
+
+	if ( ! $clients_array = get_transient( 'toggl_alert_clients' ) ) {
+
+		$clients_response = $toggl_client->getClients( array() );
+
+		foreach ( $clients_response as $client ) {
+
+			$clients_array[ $client['id'] ] = $client['name'];
+
+		}
+
+		set_transient( 'toggl_alert_clients', $clients_array, DAY_IN_SECONDS );
+
+	}
+
+	if ( ! $projects_array = get_transient( 'toggl_alert_projects' ) ) {
+
+		foreach ( $workspaces_array as $workspace_id => $workspace_name ) {
+
+			$projects_in_workspace = $toggl_client->getProjects( array(
+				'id' => $workspace_id,
+				'active' => 'true',
+			) );
+
+			foreach ( $projects_in_workspace as $project ) {
+
+				$workspace_name = $workspaces_array[ $project['wid'] ];
+				$client_name = $clients_array[ $project['cid'] ];
+
+				if ( ! isset( $projects_array[ $workspace_name ] ) ) {
+					$projects_array[ $workspace_name ] = array();
+				}
+
+				if ( empty( $client_name ) ) {
+					$client_name = __( 'No Client', 'toggl-alert' );
+				}
+
+				$projects_array[ $workspace_name ][ $project['wid'] . '-' . $project['id'] ] = $client_name . ': ' . $project['name'];
+
+			}
+
+			foreach ( $projects_array as $workspace_name => $projects ) {
+
+				asort( $projects_array[ $workspace_name ] );
+
+			}
+
+			set_transient( 'toggl_alert_projects', $projects_array, DAY_IN_SECONDS );
+
+		}
+
+	}
+	
+	return $projects_array;
+	
+}
