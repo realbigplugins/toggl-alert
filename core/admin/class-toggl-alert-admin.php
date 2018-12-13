@@ -447,6 +447,8 @@ final class Toggl_Alert_Admin {
 				'%project%',
 				'%logged_hours%',
 				'%minimum_hours%',
+				'%since_date%',
+				'%until_date%',
 			);
 			
 		}

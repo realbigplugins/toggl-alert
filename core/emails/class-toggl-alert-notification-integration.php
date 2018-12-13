@@ -188,6 +188,10 @@ final class Toggl_Alert_Notification_Integration {
 				return false;
 			}
 			
+			// Pass into the Notification Flow along with the Logged Hours so it can be used for Merge Tags
+			$args['since'] = $since_date;
+			$args['until'] = date( 'Y-m-d', strtotime( "$trigger_day -1 days" ) ); // Subtract one day from here because the range does not include the trigger day. The math above works out for this for the query, but we do not want the Merge Tag to be confusing for Users.
+			
 		}
 		else {
 			
@@ -225,6 +229,9 @@ final class Toggl_Alert_Notification_Integration {
 			
 			$replacements['%minimum_hours%'] = $fields['hours'];
 			$replacements['%logged_hours%'] = number_format( $args['logged_hours'], 2 );
+			
+			$replacements['%since_date%'] = date_i18n( 'l, F j, Y', strtotime( $args['since'] ) );
+			$replacements['%until_date%'] = date_i18n( 'l, F j, Y', strtotime( $args['until'] ) );
 
 			switch ( $trigger ) {
 					
