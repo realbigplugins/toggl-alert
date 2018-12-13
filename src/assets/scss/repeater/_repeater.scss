@@ -144,6 +144,14 @@
 	.toggl-alert-auto-expand-textarea {
 		resize: none;
 	}
+	
+	select.required.select2 {
+		width: auto !important;
+		display: block !important; // Ensure that our validation works correctly
+		position: absolute !important;
+		clip: rect(0,0,0,0) !important;
+		height: 2em !important; // Ensures required tooltip shows properly
+	}
 
 }
 

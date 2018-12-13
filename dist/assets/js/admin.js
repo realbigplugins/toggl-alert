@@ -12263,12 +12263,75 @@ var togglAlertSelected = {};
 	'use strict';
 
 	/**
+  * Conditionally Hide/Show Fields based on the selected Trigger
+  * 
+  * @param	  {Event|String}  row		  Either the Event from creating a new Row or the Slack Trigger Field
+  * @param	  {Object|string} option_class The new Row (unused) or the Value of the Slack Trigger Field
+  *									 
+  * @since	  1.0.0
+  * @return	  void
+  */
+
+	var togglAlertConditionalFields = function togglAlertConditionalFields(row, option_class) {
+
+		// Handle newly created Rows
+		if (row.type == 'toggl-alert-rbm-repeater-add') {
+			row = option_class;
+			option_class = '';
+		} else {
+			row = $(row).closest('.toggl-alert-rbm-repeater-content');
+		}
+
+		if (option_class == '') {
+
+			$(row).find('select').each(function (index, select) {
+
+				$(select).val('');
+
+				if ($(select).hasClass('select2')) {
+					$(select).trigger('change');
+				}
+			});
+
+			$(row).find('.toggl-alert-conditional').closest('td').addClass('hidden');
+		} else {
+
+			$(row).find('.toggl-alert-conditional.' + option_class).closest('td.hidden').removeClass('hidden');
+			$(row).find('.toggl-alert-conditional').not('.' + option_class).closest('td').addClass('hidden');
+		}
+
+		$(row).find('select.select2').each(function (index, field) {
+
+			// No Tab index for the "hidden" Select field
+			$(field).attr('tabindex', -1);
+
+			// Why would you be unable to tab into it by default?!?!
+			//$( field ).siblings( '.select2-container' ).find( '.chosen-single' ).attr( 'tabindex', 0 );
+		});
+
+		$(row).find('.required').each(function (index, field) {
+
+			if ($(field).closest('td').hasClass('hidden')) {
+				$(field).attr('required', false);
+			} else {
+				$(field).attr('required', true);
+			}
+		});
+
+		$(row).find('input[type="checkbox"].default-checked').each(function (index, checkbox) {
+
+			$(checkbox).prop('checked', true);
+		});
+
+		$(document).trigger('toggl-alert-conditional-fields-set', row);
+	};
+
+	/**
   * Add Notification Status Indiciators to show whether or not a Notification is "active"
   * 
   * @since	  1.0.0
   * @return	  void
   */
-
 	var togglAlertNotificationIndicators = function togglAlertNotificationIndicators() {
 
 		$('.repeater-header div[data-repeater-default-title]').each(function (index, header) {
@@ -12323,6 +12386,8 @@ var togglAlertSelected = {};
 
 		if ($repeaters.length) {
 
+			$repeaters.on('toggl-alert-rbm-repeater-add', togglAlertConditionalFields);
+
 			$(document).ready(function () {
 				togglAlertNotificationIndicators();
 			});
@@ -12338,6 +12403,19 @@ var togglAlertSelected = {};
 	};
 
 	inittogglAlertRepeaterFunctionality();
+
+	$(document).ready(function () {
+
+		// Handle conditional fields on Page Load
+		$('.toggl-alert-trigger').each(function (index, trigger) {
+			togglAlertConditionalFields(trigger, $(trigger).val());
+		});
+
+		// And toggle them on Change
+		$(document).on('change', '.toggl-alert-trigger', function () {
+			togglAlertConditionalFields($(this), $(this).val());
+		});
+	});
 })(jQuery);
 
 /***/ }),
