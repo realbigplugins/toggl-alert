@@ -322,17 +322,19 @@ if ( ! class_exists( 'Toggl_Alert' ) ) {
 					'type'  => 'hook',
 				),
 				'admin_title' => array(
-					'label' => _x( 'Identifier for this Notification', 'Admin Title Field Label', 'toggl-alert' ),
+					'label' => '<strong>' . _x( 'Identifier for this Notification', 'Admin Title Field Label', 'toggl-alert' ) . '</strong>',
 					'type'  => 'text',
 					'input_class' => 'regular-text email-post-title',
 					'input_atts' => array(
 						'placeholder' => __( 'New Email Notification', 'toggl-alert' ),
 					),
 					'description'  => __( 'Helps distinguish Notifications from one another on the Settings Screen. If left blank, your Notification will be labeled &ldquo;New Email Notification&rdquo;.', 'toggl-alert' ),
+					'description_tip' => false,
+					'description_placement' => 'after_label',
 				),
 				'project' => array(
 					'type' => 'select',
-					'label' => __( 'Project', 'toggl-alert' ),
+					'label' => '<strong>' . __( 'Project', 'toggl-alert' ) . '</strong>',
 					'opt_groups' => true,
 					'opt_group_selection_prefix' => false,
 					'placeholder' => __( '-- Select Project --', 'toggl-alert' ),
@@ -342,7 +344,7 @@ if ( ! class_exists( 'Toggl_Alert' ) ) {
 				),
 				'trigger' => array(
 					'type' => 'select',
-					'label' => __( 'Trigger', 'toggl-alert' ),
+					'label' => '<strong>' . __( 'Trigger', 'toggl-alert' ) . '</strong>',
 					'placeholder' => __( '-- Select Trigger --', 'toggl-alert' ),
 					'input_class' => 'required toggl-alert-trigger select2',
 					'options' => $triggers,
@@ -350,41 +352,67 @@ if ( ! class_exists( 'Toggl_Alert' ) ) {
 				),
 				'hours' => array(
 					'type' => 'number',
-					'label' => __( 'Alert when the Project is under X Hours for the selected Time Period', 'toggl-alert' ),
+					'label' => '<strong>' . __( 'Alert when the Project is under X Hours for the selected Time Period', 'toggl-alert' ) . '</strong>',
 					'input_class' => 'required toggl-alert-hours',
 					'default' => '',
 				),
 				'subject' => array(
-					'label' => __( 'Subject Line', 'toggl-alert' ),
+					'label' => '<strong>' . __( 'Subject Line', 'toggl-alert' ) . '</strong>',
 					'type'  => 'text',
 					'input_class' => 'regular-text email-subject required',
-					'description'  => __( 'If not set, this will default to your &ldquo;Identifier for this Notification&rdquo; value.', 'toggl-alert' ),
+					'description'  => __( 'If not set, this will default to your &ldquo;Identifier for this Notification&rdquo; value.', 'toggl-alert' ) . 
+										 '<p class="toggl-alert-notification-tip">' .
+										 	__( 'Possible available dynamic variables:', 'toggl-alert' ) .
+										 	'<span class="toggl-alert-notification-tags"></span>' . 
+										 '</p>',
+					'description_tip' => false,
+					'description_placement' => 'after_label',
+					'input_atts' => array(
+						'data-has-tip' => true,
+						'autocomplete' => 'off',
+					),
 				),
 				'message' => array(
-					'label' => __( 'Message', 'toggl-alert' ),
+					'label' => '<strong>' . __( 'Message', 'toggl-alert' ) . '</strong>',
 					'type'  => 'textarea',
 					'input_class' => 'regular-text email-message required',
+					'description'  => '<p class="toggl-alert-notification-tip">' .
+										__( 'Possible available dynamic variables:', 'toggl-alert' ) .
+										'<span class="toggl-alert-notification-tags"></span>' . 
+									'</p>',
+					'description_tip' => false,
+					'description_placement' => 'after_label',
+					'input_atts' => array(
+						'data-has-tip' => true,
+						'autocomplete' => 'off',
+					),
 				),
 				'to' => array(
-					'label' => __( 'To: (Optional)', 'toggl-alert' ),
+					'label' => '<strong>' . __( 'To: (Optional)', 'toggl-alert' ) . '</strong>',
 					'type'  => 'text',
 					'input_class' => 'regular-text email-to',
 					'input_atts' => array(
 						'placeholder' => get_option( 'admin_email' ),
 					),
 					'description'  => sprintf( __( 'Separate multiple emails by commas. If not set, this will default to <code>%s</code>', 'toggl-alert' ), get_option( 'admin_email' ) ),
+					'description_tip' => false,
+					'description_placement' => 'after_label',
 				),
 				'cc' => array(
-					'label' => __( 'CC: (Optional)', 'toggl-alert' ),
+					'label' => '<strong>' . __( 'CC: (Optional)', 'toggl-alert' ) . '</strong>',
 					'type'  => 'text',
 					'input_class' => 'regular-text email-cc',
 					'description'  => __( 'Separate multiple emails by commas.', 'toggl-alert' ),
+					'description_tip' => false,
+					'description_placement' => 'after_label',
 				),
 				'bcc' => array(
-					'label' => __( 'BCC: (Optional)', 'toggl-alert' ),
+					'label' => '<strong>' . __( 'BCC: (Optional)', 'toggl-alert' ) . '</strong>',
 					'type'  => 'text',
 					'input_class' => 'regular-text email-bcc',
 					'description'  => __( 'Separate multiple emails by commas.', 'toggl-alert' ),
+					'description_tip' => false,
+					'description_placement' => 'after_label',
 				),
 			);
 

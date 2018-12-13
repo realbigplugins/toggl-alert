@@ -31,9 +31,6 @@ final class Toggl_Alert_Admin {
 		// Include Hidden Field for Post ID within the Repeater
 		add_action( 'toggl_alert_email_post_id', array( $this, 'post_id_field' ) );
 		
-		// Include Replacement Hints
-		add_action( 'toggl_alert_replacement_hints', array( $this, 'replacement_hints_field' ) );
-		
 		// Localize the admin.js
 		add_filter( 'toggl_alert_localize_admin_script', array( $this, 'localize_script' ) );
 		
@@ -413,243 +410,6 @@ final class Toggl_Alert_Admin {
 	}
 	
 	/**
-	 * Create the Replacements Field based on the returned Array
-	 * 
-	 * @param		array  $args Field Args
-	 *						  
-	 * @access		public
-	 * @since		1.0.0
-	 * @return		void
-	 */
-	public function replacement_hints_field( $args ) {
-		
-		$args = wp_parse_args( $args, array(
-			'default' => false,
-		) );
-		
-		$hints = $this->get_replacement_hints();
-		$selected = $args['default'];
-		
-		foreach ( $hints as $class => $hint ) : ?>
-
-			<td class="toggl-alert-replacement-instruction <?php echo $class; ?><?php echo ( $class !== $selected ) ? ' hidden' : ''; ?>">
-				<div class="header-text">
-					<?php echo _x( 'Here are the available text replacements to use in the Message Pre-Text, Message Title, and Message Fields for the Slack Trigger selected:', 'Text Replacements Label', 'toggl-alert' ); ?>
-
-				</div>
-
-				<?php foreach ( $hint as $replacement => $label ) : ?>
-
-					<div class="replacement-wrapper">
-						<span class="replacement"><?php echo $replacement; ?></span> : <span class="label"><?php echo $label; ?></span>
-					</div>
-
-				<?php endforeach; ?>
-
-				<?php if ( $class == 'complete_course' ) : ?>
-
-					<div class="additional-help-text <?php echo $class; ?>">
-						<?php printf( _x( '<em>Cumulative</em> is the average for all the %s in the %s.', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quizzes' ), LearnDash_Custom_Label::get_label( 'course' ) ); ?>
-						<br />
-						<?php printf( _x( '<em>Aggregate</em> is the sum for all the %s in the %s.', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quizzes' ), LearnDash_Custom_Label::get_label( 'course' ) ); ?>
-					</div>
-
-				<?php endif; ?>
-			</td>
-
-		<?php endforeach;
-		
-	}
-	
-	/**
-	 * Filterable Array holding all the Text Replacement Hints for all the Triggers
-	 * 
-	 * @access		private
-	 * @since		1.0.0
-	 * @return		array   Array of Text Replacement Hints for each Trigger
-	 */
-	private function get_replacement_hints() {
-
-		/**
-		* Add extra Replacement Hints directly to the User Group
-		*
-		* @since 1.0.0
-		*/
-		$user_hints = apply_filters( 'toggl_alert_do_fielduser_replacement_hints', array(
-			'%username%' => _x( 'Display the User\'s username.', '%username% Hint Text', 'toggl-alert' ),
-			'%email%' => _x( 'Display the User\'s email.', '%email% Hint Text', 'toggl-alert' ),
-			'%name%' => _x( 'Display the User\'s display name.', '%name% Hint Text', 'toggl-alert' ),
-		) );
-		
-		$course_basic_hints = array(
-			'%course_name%' => sprintf( _x( 'Display the %s name.', '%course_name% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-			'%course_link%' => sprintf( _x( 'Show a link to the %s.', '%course_link% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-		);
-		
-		$course_point_hints = array();
-		
-		// If we're on LD >= 2.4, Course Points exist
-		if ( version_compare( LEARNDASH_VERSION, '2.4' ) >= 0 ) {
-			
-			$course_point_hints['%student_course_points%'] = sprintf( _x( 'The total %s Points the Student has.', '%student_course_points% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'course' ) );
-			$course_point_hints['%access_course_points%'] = sprintf( _x( 'The number of %s Points required to access the %s.', '%access_course_points% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'course' ), LearnDash_Custom_Label::get_label( 'course' ) );
-			
-		}
-		
-		/**
-		* Keeps Course Point stuff out of the Basic Hints so that useless Replacement Hints don't end up in Lessons/Topics/etc.
-		* 
-		* @since 1.2.4
-		*/
-		$course_point_hints = apply_filters( 'toggl_alert_do_fieldcourse_point_replacement_hints', $course_point_hints );
-		
-		/**
-		* Add extra Replacement Hints directly to the Basic Course Hint Group
-		* 
-		* @since 1.0.0
-		*/
-		$course_basic_hints = apply_filters( 'toggl_alert_do_fieldcourse_basic_replacement_hints', $course_basic_hints );
-
-		$course_advanced_hints = array(
-			'%timestamp%' => sprintf( _x( 'Display the time when %s was completed.', '%timestamp% Hint Text for Courses', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-			'%cumulative_correct%' => sprintf( _x( 'Display the average points scored across all %s in the %s.', '%cumulative_correct% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quizzes' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-			'%cumulative_incorrect%' => sprintf( _x( 'Display the average points missed across all %s in the %s.', '%cumulative_incorrect% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quizzes' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-			'%cumulative_percentage%' => sprintf( _x( 'Display the average percentage of correct answers across all %s in the %s.', '%cumulative_percentage% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quizzes' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-			'%cumulative_timespent%' => sprintf( _x( 'Display the average time spent across all %s in the %s.', '%cumulative_timespent% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quizzes' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-			'%cumulative_total%' => sprintf( _x( 'Display the average of the total number of questions in the %s', '%cumulative_total% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-			'%aggregate_correct%' => sprintf( _x( 'Display the sum of the points scored across all %s in the %s.', '%aggregate_correct% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quizzes' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-			'%aggregate_incorrect%' => sprintf( _x( 'Display the sum of the points missed across all %s in the %s.', '%aggregate_incorrect% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quizzes' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-			'%aggregate_percentage%' => sprintf( _x( 'Display the sum of the percentage of correct answers across all %s in the %s.', '%aggregate_percentage% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quizzes' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-			'%aggregate_timespent%' => sprintf( _x( 'Display the sum of the time spent across all %s in the %s.', '%aggregate_timespent% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quizzes' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-			'%aggregate_total%' => sprintf( _x( 'Display the sum of the total number of questions on the %s', '%aggregate_total% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-		);
-		
-		// If we're on LD >= 2.4, Course Points exist
-		if ( version_compare( LEARNDASH_VERSION, '2.4' ) >= 0 ) {
-			
-			$course_advanced_hints = array( '%awarded_course_points%' => sprintf( _x( 'The %s Points awarded upon completion.', '%awarded_course_points% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'course' ) ) ) + $course_advanced_hints;
-			
-		}
-		
-		/**
-		* Add extra Replacement Hints directly to the Advanced Course Hint Group
-		* 
-		* @since 1.0.0
-		*/
-		$course_advanced_hints = apply_filters( 'toggl_alert_do_fieldcourse_advanced_replacement_hints', $course_advanced_hints );
-
-		/**
-		* Add extra Replacement Hints directly to the Lesson Hint Group
-		* 
-		* @since 1.0.0
-		*/
-		$lesson_hints = apply_filters( 'toggl_alert_do_fieldlesson_replacement_hints', array(
-			'%lesson_name%' => sprintf( _x( 'Display the %s name.', '%lesson_name% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'lesson' ) ),
-			'%lesson_link%' => sprintf( _x( 'Show a link to the %s.', '%lesson_link% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'lesson' ) ),
-		) );
-		
-		/**
-		* Add extra Replacement Hints directly to the Advanced Lesson Hint Group
-		* 
-		* @since 1.2.4
-		*/
-		$lesson_advanced_hints = apply_filters( 'toggl_alert_do_fieldlesson_advanced_replacement_hints', array(
-			'%timestamp%' => sprintf( _x( 'Display the time when the %s was completed.', '%timestamp% Hint Text for Lessons', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'lesson' ) ),
-		) );
-
-		/**
-		* Add extra Replacement Hints directly to the Topic Hint Group
-		* 
-		* @since 1.0.0
-		*/
-		$topic_hints = apply_filters( 'toggl_alert_do_fieldtopic_replacement_hints', array(
-			'%topic_name%' => sprintf( _x( 'Display the %s name.', '%topic_name% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'topic' ) ),
-			'%topic_link%' => sprintf( _x( 'Show a link to the %s.', '%topic_link% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'topic' ) ),
-			'%timestamp%' => sprintf( _x( 'Display the time when the %s was completed.', '%timestamp% Hint Text for Topics', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'topic' ) ),
-		) );
-	  
-		/**
-		* Add extra Replacement Hints directly to the Quiz Hint Group
-		* 
-		* @since 1.0.0
-		*/
-		$quiz_hints = apply_filters( 'toggl_alert_do_fieldquiz_replacement_hints', array(
-			'%quiz_name%' => sprintf( _x( 'Display the %s name.', '%quiz_name% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quiz' ) ),
-			'%quiz_link%' => sprintf( _x( 'Show a link to the %s.', '%quiz_link% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quiz' ) ),
-			'%correct%' => sprintf( _x( 'Display the number of correct answers given on the %s', '%correct% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quiz' ) ),
-			'%incorrect%' => sprintf( _x( 'Display the number of incorrect answers given on the %s', '%incorrect% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quiz' ) ),
-			'%total%' => sprintf( _x( 'Display the total number of questions on the %s', '%total% Hint Text for Quizzes', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quiz' ) ),
-			'%percentage%' => sprintf( _x( 'Display the percentage of correct answers on the %s.', '%percentage% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quiz' ) ),
-			'%timestamp%' => sprintf( _x( 'Display the time when the %s was completed.', '%timestamp% Hint Text for Quizzes', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quiz' ) ),
-			'%time_spent%' => sprintf( _x( 'Display the how long it took to complete the %s.', '%time_spent% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quiz' ) ),
-			'%questions_pending_grading%' => sprintf( _x( 'Shows a list of links to Questions pending manual grading for the %s submission.', '%questions_pending_grading% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'quiz' ) ),
-		) );
-		
-		/**
-		* Add extra Replacement Hints directly to the Essay Hint Group
-		* 
-		* @since 1.0.0
-		*/
-		$essay_hints = apply_filters( 'toggl_alert_do_fieldessay_replacement_hints', array(
-			'%points_earned%' => _x( 'Display the total points earned.', '%points_earned% Hint Text', 'toggl-alert' ),
-			'%points_possible%' => _x( 'Display the total points possible.', '%points_possible% Hint Text', 'toggl-alert' ),
-		) );
-
-		/**
-		 * Add extra Replacement Hints directly to the Upload Assignment Hint Group
-		 * 
-		 * @since 1.2.0
-		 */
-		$upload_assignment_hints = apply_filters( 'toggl_alert_do_fieldupload_assignment_replacement_hints', array(
-			'%assignment_name%' => _x( 'Display the Assignment name.', '%assignment_name% Hint Text', 'toggl-alert' ),
-			'%file_name%' => _x( 'Display the Assignment file name.', '%file_name% Hint Text', 'toggl-alert' ),
-			'%file_link%' => _x( 'Display the Assignment file link.', '%file_link% Hint Text', 'toggl-alert' ),
-			'%lesson_type%' => sprintf( _x( 'Display the %s type.', '%lesson_type% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'lesson' ) ),
-			'%course_name%' => sprintf( _x( 'Display the %s name.', '%course_name% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-			'%course_link%' => sprintf( _x( 'Show a link to the %s.', '%course_link% Hint Text', 'toggl-alert' ), LearnDash_Custom_Label::get_label( 'course' ) ),
-			'%points_possible%' => _x( 'Display the total points possible.', '%points_possible% Hint Text', 'toggl-alert' ),
-		) );
-		
-		/**
-		 * Add extra Replacement Hints directly to the Approve Assignment Hint Group
-		 * 
-		 * @since 1.2.0
-		 */
-		$approve_assignment_hints = apply_filters( 'toggl_alert_do_fieldapprove_assignment_replacement_hints', $upload_assignment_hints + array(
-			'%points_earned%' => _x( 'Display the total points earned.', '%points_earned% Hint Text', 'toggl-alert' ),
-		) );
-		
-		$x_days_hints = apply_filters( 'toggl_alert_do_fieldx_days_replacement_hints', array(
-			'%x_days%' => _x( 'The number of days before/after the Event.', '%x_days% Hint Text', 'toggl-alert' ),
-		) );
-
-		$replacement_hints = array(
-			'enroll_course' => array_merge( $user_hints, $course_basic_hints, $course_point_hints ),
-			'complete_course' => array_merge( $user_hints, $course_basic_hints, $course_point_hints, $course_advanced_hints ),
-			'complete_lesson' => array_merge( $user_hints, $course_basic_hints, $lesson_hints, $lesson_advanced_hints ),
-			'lesson_available' => array_merge( $user_hints, $course_basic_hints, $lesson_hints ),
-			'complete_topic' => array_merge( $user_hints, $course_basic_hints, $lesson_hints, $topic_hints ),
-			'pass_quiz' => array_merge( $user_hints, $quiz_hints, $course_basic_hints ),
-			'fail_quiz' => array_merge( $user_hints, $quiz_hints, $course_basic_hints ),
-			'complete_quiz' => array_merge( $user_hints, $quiz_hints, $course_basic_hints ),
-			'upload_assignment' => array_merge( $user_hints, $upload_assignment_hints, $lesson_hints ),
-			'approve_assignment' => array_merge( $user_hints, $approve_assignment_hints, $lesson_hints ),
-			'not_logged_in' => array_merge( $user_hints, $x_days_hints ),
-			'course_expires' => array_merge( $course_basic_hints, $course_point_hints, $x_days_hints ),
-			'course_enrollment' => array_merge( $user_hints, $course_basic_hints, $course_point_hints ),
-			'essay_graded' => array_merge( $user_hints, $course_basic_hints, $lesson_hints, $essay_hints ),
-		);
-		
-		/**
-		* Allows additional Triggers to be added to the Replacement Hints
-		*
-		* @since 1.0.0
-		*/
-		return apply_filters( 'toggl_alert_do_fieldtext_replacement_hints', $replacement_hints, $user_hints, $course_basic_hints );
-		
-	}
-	
-	/**
 	 * Localize the Admin.js with some values from PHP-land
 	 * 
 	 * @param	  array $localization Array holding all our Localizations
@@ -667,6 +427,29 @@ final class Toggl_Alert_Admin {
 			'validationError' => _x( 'This field is required', 'Required Field not filled out (Ancient/Bad Browsers Only)', 'toggl-alert' ),
 			'onbeforeunload' => __( 'Any unsaved changes will be lost. Are you sure you want to leave this page?', 'toggl-alert' ),
 		);
+		
+		$weekdays = Toggl_Alert::get_weekdays();
+		$weekday_triggers = array();
+			
+		foreach ( $weekdays as $index => $day ) {
+
+			$key = date( 'l', strtotime( "Sunday +{$index} days" ) );
+
+			$weekday_triggers[ 'every_' . strtolower( $key ) ] = sprintf( __( 'Every %s', 'toggl-alert' ), $day );
+
+		}
+		
+		$localization['merge_tags'] = array();
+		
+		foreach ( $weekday_triggers as $trigger => $label ) {
+			
+			$localization['merge_tags'][ $trigger ] = array(
+				'%project%',
+				'%logged_hours%',
+				'%minimum_hours%',
+			);
+			
+		}
 		
 		$localization['ajax'] = admin_url( 'admin-ajax.php' );
 		
