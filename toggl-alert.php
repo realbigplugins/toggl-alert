@@ -357,9 +357,9 @@ if ( ! class_exists( 'Toggl_Alert' ) ) {
 					'default' => '',
 				),
 				'subject' => array(
-					'label' => '<strong>' . __( 'Subject Line', 'toggl-alert' ) . '</strong>',
+					'label' => '<strong>' . __( 'Subject Line (Optional)', 'toggl-alert' ) . '</strong>',
 					'type'  => 'text',
-					'input_class' => 'regular-text email-subject required',
+					'input_class' => 'regular-text email-subject',
 					'description'  => __( 'If not set, this will default to your &ldquo;Identifier for this Notification&rdquo; value.', 'toggl-alert' ) . 
 										 '<p class="toggl-alert-notification-tip">' .
 										 	__( 'Possible available dynamic variables:', 'toggl-alert' ) .

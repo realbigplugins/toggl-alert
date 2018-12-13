@@ -88,6 +88,13 @@ final class Toggl_Alert_Notification_Integration {
 			'cc' => '',
 			'bcc' => '',
 		) );
+		
+		if ( empty( $fields['subject'] ) ) {
+			
+			// Default to the Notification Identifier
+			$fields['subject'] = $post->post_title;
+			
+		}
 
 		$replacements = TOGGLALERT()->notification_handler->notifications_replacements(
 			array(
