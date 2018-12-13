@@ -51,7 +51,9 @@ final class Toggl_Alert_Notification_Triggers {
 	 */
 	public function every_sunday() {
 		
-		do_action( 'toggl_alert_notify', 'every_sunday' );
+		do_action( 'toggl_alert_notify', 'every_sunday', array(
+			'weekday_index' => 0,
+		) );
 		
 	}
 	
@@ -64,7 +66,9 @@ final class Toggl_Alert_Notification_Triggers {
 	 */
 	public function every_monday() {
 		
-		do_action( 'toggl_alert_notify', 'every_monday' );
+		do_action( 'toggl_alert_notify', 'every_monday', array(
+			'weekday_index' => 1,
+		) );
 		
 	}
 	
@@ -77,7 +81,9 @@ final class Toggl_Alert_Notification_Triggers {
 	 */
 	public function every_tuesday() {
 		
-		do_action( 'toggl_alert_notify', 'every_tuesday' );
+		do_action( 'toggl_alert_notify', 'every_tuesday', array(
+			'weekday_index' => 2,
+		) );
 		
 	}
 	
@@ -90,7 +96,9 @@ final class Toggl_Alert_Notification_Triggers {
 	 */
 	public function every_wednesday() {
 		
-		do_action( 'toggl_alert_notify', 'every_wednesday' );
+		do_action( 'toggl_alert_notify', 'every_wednesday', array(
+			'weekday_index' => 3,
+		) );
 		
 	}
 	
@@ -103,7 +111,9 @@ final class Toggl_Alert_Notification_Triggers {
 	 */
 	public function every_thursday() {
 		
-		do_action( 'toggl_alert_notify', 'every_thursday' );
+		do_action( 'toggl_alert_notify', 'every_thursday', array(
+			'weekday_index' => 4,
+		) );
 		
 	}
 	
@@ -116,7 +126,9 @@ final class Toggl_Alert_Notification_Triggers {
 	 */
 	public function every_friday() {
 		
-		do_action( 'toggl_alert_notify', 'every_friday' );
+		do_action( 'toggl_alert_notify', 'every_friday', array(
+			'weekday_index' => 5,
+		) );
 		
 	}
 	
@@ -129,7 +141,9 @@ final class Toggl_Alert_Notification_Triggers {
 	 */
 	public function every_saturday() {
 		
-		do_action( 'toggl_alert_notify', 'every_saturday' );
+		do_action( 'toggl_alert_notify', 'every_saturday', array(
+			'weekday_index' => 6,
+		) );
 		
 	}
 
