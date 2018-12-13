@@ -143,6 +143,28 @@ final class Toggl_Alert_Notification_Integration {
 
 			$workspace_id = $workspace_project[0];
 			$project_id = $workspace_project[1];
+			
+			$trigger_day = current_time( 'Y-m-d' );
+			
+			// If today is not the day of our Trigger, find the last occurence of that day
+			if ( (string) date( 'w', strtotime( $trigger_day ) ) !== (string) $args['weekday_index'] ) {
+				
+				// Ensure there are no issues with locale and convert 
+				$day = date( 'D', strtotime( "Sunday +{$args['weekday_index']} days" ) );
+
+				// Calculate Timezone offset, which will be subtracted from our calculated Timestamp
+				// This means UTC-5 will be added to the Timestamp
+				// This is necessary because WP Events are fired based on the Timezone but Timestamps are not, so we have to counteract it
+				$time = new \DateTime( 'now', new DateTimeZone( get_option( 'timezone_string', 'America/Detroit' ) ) );
+				$timezone_offset = $time->format( 'Z' );
+
+				$trigger_day = strtotime( 'last ' . $day ) - $timezone_offset;
+				
+				$trigger_day = date( 'Y-m-d', $trigger_day );
+				
+			}
+			
+			$since_date = date( 'Y-m-d', strtotime( "$trigger_day -7 days" ) );
 
 			$toggl_reports = \AJT\Toggl\ReportsClient::factory( array(
 				'api_key' => $api_token,
@@ -154,6 +176,7 @@ final class Toggl_Alert_Notification_Integration {
 				'user_agent' => 'rbm-toggl-alert',
 				'workspace_id' => (int) $workspace_id,
 				'project_ids' => $project_id,
+				'since' => $since_date, // Show data for the past week up until the Trigger Date
 			) );
 
 			// This is recorded in milliseconds
