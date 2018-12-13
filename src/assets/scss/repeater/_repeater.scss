@@ -152,6 +152,10 @@
 		clip: rect(0,0,0,0) !important;
 		height: 2em !important; // Ensures required tooltip shows properly
 	}
+	
+	span.select2 {
+		width: 100% !important;
+	}
 
 }
 
