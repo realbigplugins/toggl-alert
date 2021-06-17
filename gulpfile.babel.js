@@ -260,6 +260,8 @@ function version() {
         .pipe(gulp.dest('./'));
 }
 
+gulp.task( 'version', version );
+
 function setProd( done ) {
 	
 	PRODUCTION = true;

@@ -3,7 +3,7 @@
  * Plugin Name: Toggl Alert
  * Plugin URI: https://github.com/realbigplugins/toggl-alert
  * Description: Configurable Email Alerts to send out if a certain number of hours in a Project within a time period have not been met
- * Version: 0.1.0
+ * Version: 0.1.1
  * Text Domain: toggl-alert
  * Author: Real Big Marketing
  * Author URI: https://realbigplugins.com/

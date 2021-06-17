@@ -1,6 +1,6 @@
 {
   "name": "Toggl_Alert",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "dependencies": {
     "foundation-sites": "^6.4.1"
   },
@@ -31,7 +31,7 @@
     "gulp-rename": "^1.2.2",
     "gulp-replace": "^0.6.1",
     "gulp-rev": "^8.0.0",
-    "gulp-sass": "^2.1.0",
+    "gulp-sass": "^4.1.0",
     "gulp-sort": "^2.0.0",
     "gulp-sourcemaps": "^1.6.0",
     "gulp-uglify": "^1.2.0",
